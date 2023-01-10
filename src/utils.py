@@ -1,8 +1,12 @@
 from selenium import webdriver
 
 
-def build_url(city, rooms, price):
+def build_main_url(city, rooms, price):
     return f"https://www.yad2.co.il/realestate/rent?{city}&{rooms}&{price}"
+
+
+def build_item_url(item_id):
+    return f"https://www.yad2.co.il/item/{item_id}"
 
 
 def get_driver():
