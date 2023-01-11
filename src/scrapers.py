@@ -1,5 +1,10 @@
 import json, os, re
+
 from bs4 import BeautifulSoup
+from translate import Translator
+
+iw2ru = Translator(to_lang='ru', from_lang='iw')
+iw2en = Translator(to_lang='en', from_lang='iw')
 
 
 class MainScraper:
@@ -35,20 +40,22 @@ class MainScraper:
 
 
 class ItemScraper:
-    def __init__(self, page_source):
+    def __init__(self, page_source, city, item_url):
         self.soup = BeautifulSoup(page_source, 'html.parser')
+        self.city = city
 
+        self.url = item_url
         self.image_urls = self._get_image_urls()
-        self.address = self.soup.find("h4", {"class": "main_title"}).text
-        self.contact_person = self.soup.find("span", {"class": "name"}).text
+        self.address = f'{iw2en.translate(self.soup.find("h4", {"class": "main_title"}).text)}, {self.city}'
+        self.contact_person = iw2en.translate(self.soup.find("span", {"class": "name"}).text)
         self.price = self.soup.find("strong", {"class": "price"}).text
-        self.phone_number = self.soup.find("div", {"id": "lightbox_phone_number_0"}).text
+        self.phone_number = self.soup.find(string=re.compile(r"\d\d\d-\d\d\d\d\d\d\d")).text.strip()
 
-        # self.sq_meters =
-        # self.room_count =
-        # self.floor =
-        # self.description =
+        self.sq_meters = self.soup.find("dl", {"class": "cell SquareMeter-item"}).text.split(' ')[0]
+        self.room_count = self.soup.find("dl", {"class": "cell rooms-item"}).text.split(' ')[0]
+        self.floor = iw2en.translate(self.soup.find("dl", {"class": "cell floor-item"}).text.split(' ')[0])
+        self.description = iw2ru.translate(self.soup.find("div", {"class": "show_more content"}).text)
 
     def _get_image_urls(self):
-        divs = self.soup.find_all("div", {"data-swiper-slide-index": re.compile("\d")})
+        divs = self.soup.find_all("div", {"data-swiper-slide-index": re.compile(r"\d")})
         return sorted(set([div.find('img')['src'] for div in divs]))

@@ -1,7 +1,11 @@
-import os
+import os, time
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+from scrapers import MainScraper, ItemScraper
+
+from utils import build_main_url, build_item_url, get_driver, get_queries_from_json
 
 
 async def send_update(context: ContextTypes.DEFAULT_TYPE):
@@ -12,10 +16,22 @@ async def send_update(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat_id
-    data = {'username': update.effective_user.username}
+    queries = get_queries_from_json()
+    driver = get_driver()
+
+    for query in queries:
+        driver.get(build_main_url(query.get('city_code'), query.get('rooms'), query.get('price')))
+        time.sleep(2)
+
+        try:
+            _ = MainScraper(page_source=driver.page_source)
+        except Exception as e:
+            context.bot.send_message(chat_id=update.message.chat_id, text=f'CAPTCHA on the way. {e}')
+
+    driver.quit()
+
     await update.message.reply_text(text='Updates will follow soon...')
-    context.job_queue.run_repeating(send_update, 3, name='send_update', data=data, chat_id=chat_id)
+    context.job_queue.run_repeating(send_update, 600, name='send_update', chat_id=update.message.chat_id)
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
