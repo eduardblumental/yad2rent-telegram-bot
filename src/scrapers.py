@@ -8,7 +8,7 @@ iw2en = Translator(to_lang='en', from_lang='iw')
 
 
 class MainScraper:
-    def __init__(self, page_source, file_name):
+    def __init__(self, page_source, file_name='item_ids.json'):
         self.file_name = file_name
         self.soup = BeautifulSoup(page_source, 'html.parser')
 
